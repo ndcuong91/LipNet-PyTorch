@@ -52,7 +52,7 @@ def gen_annotation_video(save_name, fps = 25, num_otp = 40, size = (240, 180)):
     out = cv2.VideoWriter(save_name, 0, fps, size)
     anno_txt = ''
 
-    bgr_path = '/home/vvn/PycharmProjects/lip_reading/data/bgr/flowers-276014_960_720.jpg'
+    bgr_path = 'bgr.jpg'
     intro_img = cv2.imread(bgr_path)
     intro_img = cv2.resize(intro_img, size)
     intro_img = cv2.putText(intro_img, 'READY!', (50,100), 2,
@@ -81,7 +81,7 @@ def gen_annotation_video(save_name, fps = 25, num_otp = 40, size = (240, 180)):
 
 
 def open_video():
-    vid = cv2.VideoCapture('/home/vvn/PycharmProjects/lip_reading/data/gen_otp_video/000.avi')
+    vid = cv2.VideoCapture('000.avi')
     cap = cv2.VideoCapture(0)
 
     # Define the codec and create VideoWriter object
@@ -113,22 +113,82 @@ def open_video():
 
     # When everything done, release
     # the video capture object
+    out.release()
     vid.release()
     cap.release()
-    out.release()
 
     # Closes all the frames
     cv2.destroyAllWindows()
 
 
+def new_capture():
+    # Python program to save a
+    # video using OpenCV
+
+    # Create an object to read
+    # from camera
+    video = cv2.VideoCapture(0)
+
+    # We need to check if camera
+    # is opened previously or not
+    if (video.isOpened() == False):
+        print("Error reading video file")
+
+    # We need to set resolutions.
+    # so, convert them from float to integer.
+    frame_width = int(video.get(3))
+    frame_height = int(video.get(4))
+
+    size = (frame_width, frame_height)
+
+    # Below VideoWriter object will create
+    # a frame of above defined The output
+    # is stored in 'filename.avi' file.
+    result = cv2.VideoWriter('filename.avi',
+                             cv2.VideoWriter_fourcc(*'MJPG'),
+                             25, size)
+
+    while (True):
+        ret, frame = video.read()
+
+        if ret == True:
+
+            # Write the frame into the
+            # file 'filename.avi'
+            result.write(frame)
+
+            # Display the frame
+            # saved in the file
+            cv2.imshow('Frame', frame)
+
+            # Press S on keyboard
+            # to stop the process
+            if cv2.waitKey(40) & 0xFF == ord('s'):
+                break
+
+        # Break the loop
+        else:
+            break
+
+    # When everything done, release
+    # the video capture and video
+    # write objects
+    video.release()
+    result.release()
+
+    # Closes all the frames
+    cv2.destroyAllWindows()
+
+    print("The video was successfully saved")
 
 
 if __name__ =='__main__':
 
-    # save_dir = '/home/vvn/PycharmProjects/lip_reading/data/gen_otp_video'
-    # for i in range(10):
+    # save_dir = r''
+    # for i in range(1):
     #     name = str(i).zfill(3)
     #     save_name = os.path.join(save_dir, name+'.avi')
     #     gen_annotation_video(save_name)
-
-    open_video()
+    #
+    # open_video()
+    new_capture()
