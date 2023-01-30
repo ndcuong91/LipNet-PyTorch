@@ -55,9 +55,6 @@ def transformation_from_points(points1, points2):
                                        c2.T - (s2 / s1) * R * c1.T)),
                          np.matrix([0., 0., 1.])])
 
-
-
-    
 def anno_img(img_dir, anno_dir, save_dir):
 
     files = list(os.listdir(img_dir))
@@ -87,7 +84,7 @@ def anno_img(img_dir, anno_dir, save_dir):
         
         shapes.append(anno[17:])
         
-    
+
     front256 = get_position(256)
     M_prev = None
     for (shape, file) in zip(shapes, files):
@@ -117,8 +114,8 @@ if(__name__ == '__main__'):
         data = list(set([os.path.split(file)[0] for file in data]))
 
     
-    annos = [name.replace('GRID/6k_video_imgs', 'GRID/landmarks') for name in data]  
-    targets = [name.replace('GRID/6k_video_imgs', 'GRID/lip') for name in data]  
+    annos = [name.replace('GRID/6k_video_imgs', 'GRID/landmarks') for name in data]
+    targets = [name.replace('GRID/6k_video_imgs', 'GRID/lip') for name in data]
     
     for dst in targets:
         if(not os.path.exists(dst)):

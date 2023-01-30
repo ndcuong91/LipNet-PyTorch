@@ -1,37 +1,41 @@
-from scipy.misc import imsave
-import dlib
-import os
-import glob
-import numpy as np
-import cv2
-from multiprocessing import Pool
-import pdb
+import os, cv2
 from torch.utils.data import DataLoader, Dataset
 import time
 
+video_in = '/home/vvn/PycharmProjects/lip_reading/data/vvn/videos'
+imgs_out = '/home/vvn/PycharmProjects/lip_reading/data/vvn/imgs'
+wav_dir = '/home/vvn/PycharmProjects/lip_reading/data/vvn/audio'
+
+# video_in = '/home/vvn/PycharmProjects/lip_reading/data/GRID/s1/video'
+# imgs_out = '/home/vvn/PycharmProjects/lip_reading/data/GRID/s1/imgs'
+# wav_dir = '/home/vvn/PycharmProjects/lip_reading/data/GRID/s1/audio'
+
+
+def get_list_file_in_folder(dir, ext=['jpg', 'png', 'JPG', 'PNG', 'jpeg','JPEG']):
+    included_extensions = ext
+    file_names = [fn.replace('.cpython-36m-x86_64-linux-gnu','').replace('.cpython-38-x86_64-linux-gnu','') for fn in os.listdir(dir)
+                  if any(fn.endswith(ext) for ext in included_extensions)]
+    file_names = sorted(file_names)
+    return file_names
+
+def with_opencv(filename):
+    cap = cv2.VideoCapture(filename)
+    fps = cap.get(cv2.CAP_PROP_FPS)  # OpenCV v2.x used "CV_CAP_PROP_FPS"
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    duration = frame_count / fps
+    return duration
 
 class MyDataset(Dataset):
-    
-    def __init__(self):
-        self.IN = 'GRID/'
-        self.OUT = 'GRID_imgs/'
+    def __init__(self, num_frame = 75):
+        self.IN = video_in
+        self.OUT = imgs_out
+        self.wav = wav_dir
+        self.num_frame = num_frame
 
-        self.wav = 'GRID_wavs/'
+        list_files = get_list_file_in_folder(self.IN, ext = ['mp4','mpg'])
+        self.files = [os.path.join(self.IN, f) for f in list_files]
 
-        with open('GRID_files.txt', 'r') as f:
-            files = [line.strip() for line in f.readlines()]
-            self.files = []
-            for file in files:  
-                _, ext = os.path.splitext(file)
-                if(ext == '.XML'): continue
-                self.files.append(file)
-                print(file)
-                wav = file.replace(self.IN, self.wav).replace(ext, '.wav')
-                path = os.path.split(wav)[0]      
-                if(not os.path.exists(path)): 
-                    os.makedirs(path)
 
-                    
     def __len__(self):
         return len(self.files)
         
@@ -43,14 +47,12 @@ class MyDataset(Dataset):
         if(not os.path.exists(dst)): 
             os.makedirs(dst)
 
-        cmd = 'ffmpeg -i \'{}\' -qscale:v 2 -r 25 \'{}/%d.jpg\''.format(file, dst)
+        duration = with_opencv(file)
+        num = (self.num_frame-2)/duration
+
+        cmd = 'ffmpeg -i \'{}\' -qscale:v 2 -r {} \'{}/%d.jpg\''.format(file,num, dst)
        
         os.system(cmd)
-
-        wav = file.replace(self.IN, self.wav).replace(ext, '.wav')    
-        cmd = 'ffmpeg -y -i \'{}\' -async 1 -ac 1 -vn -acodec pcm_s16le -ar 16000 \'{}\' '.format(file, wav)
-        os.system(cmd)
-
         return dst
 
 if(__name__ == '__main__'):   
@@ -60,3 +62,4 @@ if(__name__ == '__main__'):
     for (i, batch) in enumerate(loader):
         eta = (1.0*time.time()-tic)/(i+1) * (len(loader)-i)
         print('eta:{}'.format(eta/3600.0))
+

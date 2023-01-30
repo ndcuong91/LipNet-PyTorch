@@ -1,29 +1,40 @@
 import torch
 import torch.nn as nn
-import torch.nn.init as init
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
-import math
-import os
-import sys
+import os, sys
 from dataset import MyDataset
 import numpy as np
 import time
 from model import LipNet
 import torch.optim as optim
-import re
-import json
 from tensorboardX import SummaryWriter
+from datetime import datetime
 
+opt = __import__('options')
+os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu
+writer = SummaryWriter()
+saved = sys.stdout
+save_dir = os.path.join(opt.save_dir, datetime.now().strftime("%Y%m%d-%H%M%S"))
+if(not os.path.exists(save_dir)): os.makedirs(save_dir)
+log_file = os.path.join(save_dir, "train.log")
+f = open(log_file, 'w')
 
-if(__name__ == '__main__'):
-    opt = __import__('options')
-    os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu    
-    writer = SummaryWriter()
+class log_writer:
+    def __init__(self, *writers):
+        self.writers = writers
+
+    def write(self, text):
+        for w in self.writers:
+            w.write(text)
+
+    def flush(self):
+        pass
+
+sys.stdout = log_writer(sys.stdout, f)
 
 def dataset2dataloader(dataset, num_workers=opt.num_workers, shuffle=True):
     return DataLoader(dataset,
-        batch_size = opt.batch_size, 
+        batch_size = opt.batch_size,
         shuffle = shuffle,
         num_workers = num_workers,
         drop_last = False)
@@ -43,7 +54,6 @@ def test(model, net):
 
     with torch.no_grad():
         dataset = MyDataset(opt.video_path,
-            opt.anno_path,
             opt.val_list,
             opt.vid_padding,
             opt.txt_padding,
@@ -86,11 +96,17 @@ def test(model, net):
                 print(''.join(101 *'-'))
                 
         return (np.array(loss_list).mean(), np.array(wer).mean(), np.array(cer).mean())
-    
+
+
+
 def train(model, net):
-    
+    '''
+
+    :param model:
+    :param net:
+    :return:
+    '''
     dataset = MyDataset(opt.video_path,
-        opt.anno_path,
         opt.train_list,
         opt.vid_padding,
         opt.txt_padding,
@@ -105,7 +121,7 @@ def train(model, net):
     print('num_train_data:{}'.format(len(dataset.data)))    
     crit = nn.CTCLoss()
     tic = time.time()
-    
+
     train_wer = []
     for epoch in range(opt.max_epoch):
         for (i_iter, input) in enumerate(loader):
@@ -130,32 +146,32 @@ def train(model, net):
             train_wer.extend(MyDataset.wer(pred_txt, truth_txt))
             
             if(tot_iter % opt.display == 0):
-                v = 1.0*(time.time()-tic)/(tot_iter+1)
-                eta = (len(loader)-i_iter)*v/3600.0
-                
+
                 writer.add_scalar('train loss', loss, tot_iter)
                 writer.add_scalar('train wer', np.array(train_wer).mean(), tot_iter)              
-                print(''.join(101*'-'))                
-                print('{:<50}|{:>50}'.format('predict', 'truth'))                
                 print(''.join(101*'-'))
-                
+                print('{:<50}|{:>50}'.format('predict', 'truth'))
+                print(''.join(101*'-'))
+
                 for (predict, truth) in list(zip(pred_txt, truth_txt))[:3]:
                     print('{:<50}|{:>50}'.format(predict, truth))
-                print(''.join(101*'-'))                
-                print('epoch={},tot_iter={},eta={},loss={},train_wer={}'.format(epoch, tot_iter, eta, loss, np.array(train_wer).mean()))
                 print(''.join(101*'-'))
-                
+                # loss = str(round(loss,4))
+                print('epoch={},tot_iter={},loss={},train_wer={}'.format(epoch, tot_iter, loss, np.array(train_wer).mean()))
+                print(''.join(101*'-'))
+
             if(tot_iter % opt.test_step == 0):                
                 (loss, wer, cer) = test(model, net)
-                print('i_iter={},lr={},loss={},wer={},cer={}'
-                    .format(tot_iter,show_lr(optimizer),loss,wer,cer))
-                writer.add_scalar('val loss', loss, tot_iter)                    
+                writer.add_scalar('val loss', float(loss), tot_iter)
                 writer.add_scalar('wer', wer, tot_iter)
                 writer.add_scalar('cer', cer, tot_iter)
-                savename = '{}_loss_{}_wer_{}_cer_{}.pt'.format(opt.save_prefix, loss, wer, cer)
-                (path, name) = os.path.split(savename)
-                if(not os.path.exists(path)): os.makedirs(path)
-                torch.save(model.state_dict(), savename)
+                loss = str(round(loss,4))
+                wer = round(wer,2)
+                cer  = round(cer,2)
+                print('i_iter={},lr={},loss={},wer={},cer={}'.format(tot_iter,show_lr(optimizer),loss,wer,cer))
+                save_name = 'epoch_{}_loss_{}_wer_{}_cer_{}.pt'.format(str(epoch).zfill(4), loss, wer, cer)
+                torch.save(model.state_dict(), os.path.join(save_dir, save_name))
+                print('save checkpoint to', os.path.join(save_dir, save_name))
                 if(not opt.is_optimize):
                     exit()
                 

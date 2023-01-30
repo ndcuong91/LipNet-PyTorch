@@ -1,18 +1,9 @@
 import torch
 import torch.nn as nn
-import torch.nn.init as init
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
-import math
 import os
-import sys
 from dataset import MyDataset
 import numpy as np
-import time
 from model import LipNet
-import torch.optim as optim
-import re
-import json
 import tempfile
 import shutil
 import cv2
@@ -106,6 +97,7 @@ def load_video(file):
     
     front256 = get_position(256)
     video = []
+    count = 0
     for point, scene in zip(points, array):
         if(point is not None):
             shape = np.array(point[0])
@@ -117,9 +109,13 @@ def load_video(file):
             w = 160//2
             img = img[y-w//2:y+w//2,x-w:x+w,...]
             img = cv2.resize(img, (128, 64))
+            # cv2.imwrite( os.path.join('data/samples',str(count).zfill(2)+'.jpg'), img)
+            count+=1
+            # cv2.imshow('img', img)
+            # cv2.waitKey(0)
             video.append(img)
     
-    
+    print('len video',len(video))
     video = np.stack(video, axis=0).astype(np.float32)
     video = torch.FloatTensor(video.transpose(3, 0, 1, 2)) / 255.0
 
@@ -134,12 +130,12 @@ def ctc_decode(y):
         result.append(MyDataset.ctc_arr2txt(y[:i], start=1))
     return result
         
-
+video_path = '/home/vvn/PycharmProjects/lip_reading/data/demo_678900_vad_otp.mp4'
+import time
 if(__name__ == '__main__'):
     opt = __import__('options')
     os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu    
-    
-    
+
     model = LipNet()
     model = model.cuda()
     net = nn.DataParallel(model).cuda()
@@ -153,13 +149,23 @@ if(__name__ == '__main__'):
         print('miss matched params:{}'.format(missed_params))
         model_dict.update(pretrained_dict)
         model.load_state_dict(model_dict)
-        
-    video, img_p = load_video(sys.argv[1])
+
+    begin = time.time()
+
+    video, img_p = load_video(video_path)
+
+    end1= time.time()
+    print('load video time', 1000*(end1-begin),'ms')
     y = model(video[None,...].cuda())
     txt = ctc_decode(y[0])
+    print(50*'*','result')
+    print(txt)
+
+    end = time.time()
+    print('inf time', 1000*(end-end1),'ms')
     
-    output_video(img_p, txt, sys.argv[2])
-    
+    # output_video(img_p, txt, sys.argv[2])
+    #
     shutil.rmtree(img_p)
     
     

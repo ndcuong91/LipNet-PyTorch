@@ -1,5 +1,5 @@
 import sys
-import dlib
+# import dlib
 import os
 import cv2
 import face_alignment
@@ -23,14 +23,14 @@ def run(gpu, files):
                     for (x, y) in points:
                         f.write('({}, {})\t'.format(x, y))
                     f.write('\n')
-
         count += 1
         if(count % 1000 == 0):
             print('dst={},eta={}'.format(savename, (time.time()-tic)/(count) * (len(files) - count) / 3600.0))
-       
+
+anno_file = '/home/vvn/PycharmProjects/lip_reading/data/GRID/s1/sample.txt'
 
 if(__name__ == '__main__'):
-    with open('imgs.txt', 'r') as f:
+    with open(anno_file, 'r') as f:
         data = [line.strip() for line in f.readlines()]
     
     data = [(name, name.replace('.jpg', '.txt')) for name in data]
@@ -41,7 +41,7 @@ if(__name__ == '__main__'):
        
     processes = []
     n_p = 3
-    gpus = ['1', '2', '3']
+    gpus = ['0']
     bs = len(data) // n_p
     for i in range(n_p):
         if(i == n_p - 1):

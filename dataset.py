@@ -16,10 +16,10 @@ import editdistance
 
     
 class MyDataset(Dataset):
-    letters = [' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+    # letters = [' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+    letters = [' ', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
-    def __init__(self, video_path, anno_path, file_list, vid_pad, txt_pad, phase):
-        self.anno_path = anno_path
+    def __init__(self, video_path, file_list, vid_pad, txt_pad, phase):
         self.vid_pad = vid_pad
         self.txt_pad = txt_pad
         self.phase = phase
@@ -29,14 +29,14 @@ class MyDataset(Dataset):
             
         self.data = []
         for vid in self.videos:
-            items = vid.split(os.path.sep)            
+            items = vid.split(os.path.sep)
             self.data.append((vid, items[-4], items[-1]))
         
                 
     def __getitem__(self, idx):
         (vid, spk, name) = self.data[idx]
         vid = self._load_vid(vid)
-        anno = self._load_anno(os.path.join(self.anno_path, spk, 'align', name + '.align'))
+        anno = self._load_anno2(name)
 
         if(self.phase == 'train'):
             vid = HorizontalFlip(vid)
@@ -56,7 +56,7 @@ class MyDataset(Dataset):
     def __len__(self):
         return len(self.data)
         
-    def _load_vid(self, p): 
+    def _load_vid(self, p):
         files = os.listdir(p)
         files = list(filter(lambda file: file.find('.jpg') != -1, files))
         files = sorted(files, key=lambda file: int(os.path.splitext(file)[0]))
@@ -71,6 +71,15 @@ class MyDataset(Dataset):
             lines = [line.strip().split(' ') for line in f.readlines()]
             txt = [line[2] for line in lines]
             txt = list(filter(lambda s: not s.upper() in ['SIL', 'SP'], txt))
+        return MyDataset.txt2arr(' '.join(txt).upper(), 1)
+
+    def _load_anno2(self, name):
+        '''
+
+        :param name: vd :'023487'
+        :return:
+        '''
+        txt = [ch for ch in name]
         return MyDataset.txt2arr(' '.join(txt).upper(), 1)
     
     def _padding(self, array, length):
@@ -100,6 +109,7 @@ class MyDataset(Dataset):
         pre = -1
         txt = []
         for n in arr:
+            # print('n:',n)
             if(pre != n and n >= start):                
                 if(len(txt) > 0 and txt[-1] == ' ' and MyDataset.letters[n - start] == ' '):
                     pass

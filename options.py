@@ -1,19 +1,25 @@
 gpu = '0'
 random_seed = 0
-data_type = 'unseen'
-video_path = 'lip/'
-train_list = f'data/{data_type}_train.txt'
-val_list = f'data/{data_type}_val.txt'
-anno_path = 'GRID_align_txt'
+# video_path = '/home/vvn/PycharmProjects/lip_reading/data/GRID/s1/imgs/'
+# train_list = f'/home/vvn/PycharmProjects/lip_reading/data/GRID/s1/sample.txt'
+# val_list = f'/home/vvn/PycharmProjects/lip_reading/data/GRID/s1/sample.txt'
+# anno_path = '/home/vvn/PycharmProjects/lip_reading/data/GRID/s1/align'
+
+video_path = '/home/vvn/PycharmProjects/lip_reading/data/vvn/imgs/'
+train_list = f'/home/vvn/PycharmProjects/lip_reading/data/vvn/train.txt'
+val_list = f'/home/vvn/PycharmProjects/lip_reading/data/vvn/val.txt'
+
 vid_padding = 75
 txt_padding = 200
-batch_size = 96
-base_lr = 2e-5
-num_workers = 16
-max_epoch = 10000
+batch_size = 32
+base_lr = 1e-4
+num_workers = 8
+max_epoch = 9999
 display = 10
 test_step = 1000
-save_prefix = f'weights/LipNet_{data_type}'
 is_optimize = True
 
-weights = 'pretrain/LipNet_unseen_loss_0.44562849402427673_wer_0.1332580699113564_cer_0.06796452465503355.pt'
+save_prefix = 'LipNet_'
+save_dir = '/home/vvn/PycharmProjects/lip_reading/LipNet-PyTorch/weights'
+
+weights = '/home/vvn/PycharmProjects/lip_reading/LipNet-PyTorch/weights/LipNet_vvn_loss_4.590000152587891_wer_0.83_cer_0.64.pt'
