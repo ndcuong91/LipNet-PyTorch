@@ -148,22 +148,30 @@ def new_capture():
                              cv2.VideoWriter_fourcc(*'MJPG'),
                              25, size)
 
+    start = False
     while (True):
         ret, frame = video.read()
-
         if ret == True:
 
             # Write the frame into the
             # file 'filename.avi'
-            result.write(frame)
 
             # Display the frame
             # saved in the file
+            if cv2.waitKey(10) & 0xFF == ord('s'):
+                start = True
+
+                frame = cv2.putText(frame, 'START', (300,240), 2,
+                                  3, (0,255,0), 2, cv2.LINE_AA)
+                cv2.imshow('start', frame)
+                cv2.waitKey(0)
             cv2.imshow('Frame', frame)
+            if start:
+                result.write(frame)
 
             # Press S on keyboard
             # to stop the process
-            if cv2.waitKey(40) & 0xFF == ord('s'):
+            if cv2.waitKey(10) & 0xFF == ord('q'):
                 break
 
         # Break the loop
